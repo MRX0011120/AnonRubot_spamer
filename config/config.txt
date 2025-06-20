@@ -1,0 +1,4 @@
+spam_text_AnonRubot_1 = привет, д19
+spam_text_AnonRubot_2 = ЛУЧШИЕ СОФТЫ - mrx_soft
+age_AnonRubot = 20
+
