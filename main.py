@@ -10,12 +10,14 @@ from config.config import red, ress, green, yellow, TIMEZONE
 from modules.utils import get_current_datetime
 
 sessions = os.listdir('./sessions')
-
 timezone = _timezone(TIMEZONE)
 
 print(red + '''Автор - https://t.me/mrx_soft_coder\nКанал автора с софтами - https://t.me/mrx_soft\nLolz автора - https://zelenka.guru/members/5331652/''' + ress)
-art = text2art("MRX-SOFT", space=2)
+name = text2art('AnonRubot Spamer', space=1, font="small")
+print(red+name+ress)
+art = text2art("by MRX-SOFT", space=2)
 print(red + art + ress)
+
 async def start_spam(session_path):
 
     client = await connect_to_telegram(session_path)
