@@ -1,21 +1,22 @@
 import asyncio.constants
-
 import socks
-print("socks module path:", socks.__file__)
 
-
+from pytz import timezone as _timezone
 from playwright.async_api import async_playwright
 from telethon.sync import TelegramClient
-from config.config import proxy, API_ID, API_HASH
+from config.config import proxy, API_ID, API_HASH, TIMEZONE, green, yellow, red, ress
+from modules.utils import get_current_datetime
+
+timezone = _timezone(TIMEZONE)
 
 async def connect_to_telegram(session_path, api_id = API_ID, api_hash = API_HASH):
     client = TelegramClient(session_path, api_id, api_hash, proxy=(socks.SOCKS5, proxy['host'], proxy['port'], proxy['username'], proxy['password']))
     await client.connect()
     if not await client.is_user_authorized():
-        print(f"{session_path} - НЕВАЛИД")
+        print(await get_current_datetime(timezone) ,red + f"{session_path} - НЕВАЛИД" + ress)
         return None
     else:
-        print(f"{session_path} - ВЗЯЛ СЕССИЮ В РАБОТУ")
+        print(await get_current_datetime(timezone), red + f"{session_path} - ВЗЯЛ СЕССИЮ В РАБОТУ" + ress)
         return client
 
 async def connect_to_web_telegram(numbers_from_session, code_tg=None, code_queue=None):
@@ -29,41 +30,42 @@ async def connect_to_web_telegram(numbers_from_session, code_tg=None, code_queue
             headless=True,
             proxy=proxy_socks
         )
-        print(proxy_socks)
         context = await browser.new_context()
         page = await context.new_page()
 
         await page.goto("https://web.telegram.org/a/", wait_until="domcontentloaded", timeout=120_000)
+        #нажатие на поле с "войти по номеру"
+        try:
+            login = await page.wait_for_selector("text=LOG IN BY PHONE NUMBER", timeout=120_000)
+            await login.click()
+        except:
+            print(get_current_datetime(timezone), red + f"ПЕРЕЗАПУСТИ СОФТ, КОД ОШИБКИ 101 (СМОТРЕТЬ ТУТ >>> https://github.com/MRX0011120/AnonRubot_spamer)")
+        #нажатие на поле с номером
+        try:
+            number_input = await page.wait_for_selector("input#sign-in-phone-number", timeout=30000)
+            await number_input.click()
+        except:
+            print(get_current_datetime(timezone), red + f"ПЕРЕЗАПУСТИ СОФТ, КОД ОШИБКИК 102 (СМОТРЕТЬ ТУТ >>> https://github.com/MRX0011120/AnonRubot_spamer")
 
-        login = await page.wait_for_selector("text=LOG IN BY PHONE NUMBER", timeout=120_000)
-        await login.click()
 
-        # await page.wait_for_selector("div.input-field-input[contenteditable='true'][inputmode='decimal']",
-        #                              timeout=60000,
-        #                              state='attached')
-        number_input = await page.wait_for_selector("input#sign-in-phone-number", timeout=30000)
-        # number_input = page.locator("input#sign-in-phone-number")
-        # await number_input.wait_for(timeout=60000)
-        await number_input.click()
-        print('TG - НАЖАЛ НА ПОЛЕ С НОМЕРОМ')
-
-
-
+        #выделяем весь текст
         await page.keyboard.press('Control+A')
-        # print('выделил весь текст')
+        #удаляем весь текст
         await page.keyboard.press('Backspace')
         # print('удалил весь текст')
 
+        #заполняем поле с номером
         await number_input.fill(f"+{numbers_from_session}")
-        # print("✅ Поле с номером телефона заполнено")
-
         await page.keyboard.press('Enter')
 
-        await page.wait_for_selector("input#sign-in-code", timeout=30000)
-        code_input = page.locator("input#sign-in-code")
-        await code_input.wait_for(timeout=30000)
-        await code_input.click()
-
+        #ждем поле для ввода кода
+        try:
+            await page.wait_for_selector("input#sign-in-code", timeout=30000)
+            code_input = page.locator("input#sign-in-code")
+            await code_input.wait_for(timeout=30000)
+            await code_input.click()
+        except:
+            print(get_current_datetime(timezone), )
         if code_tg is None and code_queue is not None:
             try:
                 print('TG - ЖДУ КОД ОТ TG')
@@ -125,10 +127,5 @@ async def connect_to_web_telegram(numbers_from_session, code_tg=None, code_queue
         iframe_src = await iframe_element.get_attribute('src')
 
         print(iframe_src)
-
-        # ya_ne_bot = await last_message.query_selector('button.Button.tiny.primary.has-ripple')
-        # await ya_ne_bot.click()
-
-
 
         await asyncio.Future()

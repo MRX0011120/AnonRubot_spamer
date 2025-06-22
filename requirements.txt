@@ -1,6 +1,5 @@
 art==6.1
 colorama==0.4.6
 playwright==1.52.0
-SocksiPy_branch==1.01
 Telethon==1.40.0
 PySocks==1.7.1

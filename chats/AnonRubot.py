@@ -1,17 +1,22 @@
 import asyncio
 import re
+from datetime import datetime, tzinfo
+from pytz import timezone as _timezone
 
 from telethon.tl.functions.messages import RequestWebViewRequest, RequestAppWebViewRequest, RequestSimpleWebViewRequest, RequestMainWebViewRequest, GetBotCallbackAnswerRequest
 from telethon.tl.types import InputPeerUser, InputBotAppShortName, InputUser
 from telethon.sync import events, types, functions
-from config.config import green, yellow, red, brigth, ress
+
+from config.config import green, yellow, red, brigth, ress, TIMEZONE
 from config.config import spam_text_AnonRubot_1, age_AnonRubot, spam_text_AnonRubot_2
 from modules.telegram import connect_to_web_telegram
-
+from modules.utils import get_current_datetime
 
 count = 0
 timeout_seconds = 20
 code_queu= asyncio.Queue()
+
+timezone = _timezone(TIMEZONE)
 async def start_dialog_AnonRubot(client, flag_AnonRubot):
     replied_in_this_chats = {'status': None}
     pause_timer = asyncio.Event()
@@ -22,7 +27,7 @@ async def start_dialog_AnonRubot(client, flag_AnonRubot):
         await pause_timer.wait()
         await asyncio.sleep(timeout_seconds)
         await pause_timer.wait()
-        print(yellow + f"@AnonRubot >>> тишина {timeout_seconds} сек, ищу следующего человека" + ress)
+        print(await get_current_datetime(timezone), yellow + f"@AnonRubot >>> тишина {timeout_seconds} сек, ищу следующего человека" + ress)
         await client.send_message('@AnonRubot', '/next')
 
     def reset_timer():
@@ -36,9 +41,9 @@ async def start_dialog_AnonRubot(client, flag_AnonRubot):
         if match:
             code_tg = match.group(1)
             await code_queu.put(code_tg)
-            print(f'код от тг - {code_tg}')
+            print(await get_current_datetime(timezone), f'код от тг - {code_tg}')
         else:
-            print('кода нет')
+            print(await get_current_datetime(timezone), 'кода нет')
         # print(f'новое сообщение от тг: {event.raw_text}')
 
     @client.on(events.NewMessage(from_users='@AnonRubot'))
@@ -52,7 +57,7 @@ async def start_dialog_AnonRubot(client, flag_AnonRubot):
             await client.send_message('@AnonRubot', spam_text_AnonRubot_1)
             count += 1
             replied_in_this_chats['status'] = False
-            print(green + brigth + f'@AnonRubot >>> отправил привествие (ТЕКСТ) > {count}' + ress)
+            print(await get_current_datetime(timezone), green + brigth + f'@AnonRubot >>> отправил привествие (ТЕКСТ) > {count}' + ress)
 
         elif not any(phrase in text for phrase in [
             'Собеседник найден',
@@ -67,36 +72,36 @@ async def start_dialog_AnonRubot(client, flag_AnonRubot):
             'нажмите на эмодзи в порядке',
             'Ищем собеседника...',
             'У вас уже есть собеседник 🤔',
-            'Диалог завершен. Ищем нового собеседника...'
+            'Диалог завершен. Ищем нового собеседника...',
+            'Привет! Это Анонимный чат Телеграма.',
+            'Спасибо, что указали свой возраст',
+            'Текст выше адресован людям, говорящим по-английски.'
         ]):
             if not replied_in_this_chats['status']:
                 await asyncio.sleep(1)
                 await client.send_message('@AnonRubot', spam_text_AnonRubot_2)
                 replied_in_this_chats['status'] = True
-                print(green + brigth + f"@AnonRubot >>> отправил спам текст > {count}" + ress)
+                print(await get_current_datetime(timezone), green + brigth + f"@AnonRubot >>> отправил спам текст > {count}" + ress)
             else:
-                print(yellow + brigth + '@AnonRubot >>> я уже ответил этому человеку')
+                print(await get_current_datetime(timezone), yellow + brigth + '@AnonRubot >>> я уже ответил этому человеку' + ress)
 
         elif 'Собеседник закончил с вами связь' in event.raw_text:
             await client.send_message('@AnonRubot', '/search')
-            print(yellow + brigth + '@AnonRubot >>> со мной закончили связь, ищу следующего' + ress)
+            print(await get_current_datetime(timezone), yellow + brigth + '@AnonRubot >>> со мной закончили связь, ищу следующего' + ress)
 
         elif '(от 9 до 99)' in event.raw_text:
             await client.send_message('@AnonRubot', age_AnonRubot)
             await client.send_message('@AnonRubot', '/search')
-            print(yellow + brigth + f'@AnonRubot >>> указал возраст {age_AnonRubot}' + ress)
+            print(await get_current_datetime(timezone), yellow + brigth + f'@AnonRubot >>> указал возраст {age_AnonRubot}' + ress)
 
         elif 'У вас уже есть собеседник' in event.raw_text:
-            print(yellow + brigth + '@AnonRubot >>> собеседник уже есть, ищу следующего' + ress)
+            print(await get_current_datetime(timezone), yellow + brigth + '@AnonRubot >>> собеседник уже есть, ищу следующего' + ress)
             await client.send_message('@AnonRubot', '/next')
 
         elif 'Подтвердите, что вы не бот, с помощью этой кнопки' in event.raw_text:
-            print(red + '@AnonRubot >>> ВЫЛЕЗЛА КАПЧА, ОЖИДАЙТЕ, СКОРО ПОЛУЧИТЕ ССЫЛКУ ДЛЯ РЕШЕНИЯ' + ress)
-            print(event.raw_text)
-            print(event.message.to_dict())
+            print(await get_current_datetime(timezone), yellow + '@AnonRubot >>> ВЫЛЕЗЛА КАПЧА, ОЖИДАЙТЕ, СКОРО ПОЛУЧИТЕ ССЫЛКУ ДЛЯ РЕШЕНИЯ' + ress)
 
             pause_timer.clear()
-
 
             me = await client.get_me()
             number = me.phone
@@ -105,32 +110,21 @@ async def start_dialog_AnonRubot(client, flag_AnonRubot):
             reset_timer()
             pause_timer.set()
 
-            # app_info = await client(
-            #     RequestAppWebViewRequest(
-            #         "me",
-            #         InputBotAppShortName(await client.get_input_entity("AnonRubot"), "anonrubotcaptcha"),
-            #         "android",
-            #         start_param='',
-            #     )
-            # )
-            # print(app_info)
-            # print(app_info.url)
-
             flag_AnonRubot['AnonRubot'] = False
 
         elif 'Мы временно ограничили вам пользование чатом за нарушение правил Анонимного чата.' in event.raw_text:
-            print(red + '@AnonRubot >>> блок на сутки')
+            print(await get_current_datetime(timezone), red + '@AnonRubot >>> блок на сутки' + ress)
             flag_AnonRubot['AnonRubot'] = False
 
         elif 'Похоже, вы исчерпали дневной лимит чатов' in event.raw_text:
-            print(red + '@AnonRubot >>> отдых на сутки')
+            print(await get_current_datetime(timezone), red + '@AnonRubot >>> отдых на сутки' + ress)
             flag_AnonRubot['AnonRubot'] = False
 
         elif 'нажмите на эмодзи в порядке' in event.raw_text:
             pause_timer.clear()
             emoji_lsit = []
-            i = 0
             for row in (event.message.to_dict())['reply_markup']['rows']:
+                i = 0
                 for button in row['buttons']:
                     text = button.get('text')
                     if text and not text.startswith('Обновить'):
@@ -144,9 +138,7 @@ async def start_dialog_AnonRubot(client, flag_AnonRubot):
                     if 'Обновить' in button.text:
                         continue
                     buttons.append(button)
-            selected = input('ВВЕДИ НОМЕРА КНОПОК ЧЕРЕЗ ПРОБЕЛ: ').split()
-            print(selected)
-
+            selected = input(await get_current_datetime(timezone), 'ВВЕДИ НОМЕРА КНОПОК ЧЕРЕЗ ПРОБЕЛ: ').split()
 
             for i in selected:
                 button = buttons[int(i)-1]
@@ -157,7 +149,7 @@ async def start_dialog_AnonRubot(client, flag_AnonRubot):
                         data=button.data
                     ))
                 except Exception as e:
-                    print(e)
+                    print(await get_current_datetime(timezone), e)
             reset_timer()
             pause_timer.set()
 
