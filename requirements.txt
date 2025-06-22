@@ -1,5 +1,6 @@
 art==6.1
 colorama==0.4.6
 playwright==1.52.0
-Telethon==1.40.0
+pytz==2024.2
 PySocks==1.7.1
+Telethon==1.40.0
