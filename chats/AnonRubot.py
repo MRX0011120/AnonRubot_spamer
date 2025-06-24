@@ -124,8 +124,8 @@ async def start_dialog_AnonRubot(client, flag_AnonRubot):
             pause_timer.clear()
             emoji_lsit = []
             for row in (event.message.to_dict())['reply_markup']['rows']:
-                i = 0
                 for button in row['buttons']:
+                    i = 0
                     text = button.get('text')
                     if text and not text.startswith('Обновить'):
                         emoji_lsit.append(text + f'{i+1}')
@@ -138,7 +138,7 @@ async def start_dialog_AnonRubot(client, flag_AnonRubot):
                     if 'Обновить' in button.text:
                         continue
                     buttons.append(button)
-            selected = input(await get_current_datetime(timezone), 'ВВЕДИ НОМЕРА КНОПОК ЧЕРЕЗ ПРОБЕЛ: ').split()
+            selected = input('ВВЕДИ НОМЕРА КНОПОК ЧЕРЕЗ ПРОБЕЛ: ').split()
 
             for i in selected:
                 button = buttons[int(i)-1]
