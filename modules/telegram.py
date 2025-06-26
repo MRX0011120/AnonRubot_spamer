@@ -1,30 +1,41 @@
 import asyncio.constants
-import socks
+import python_socks
 
 from pytz import timezone as _timezone
 from playwright.async_api import async_playwright
 from telethon.sync import TelegramClient
-from config.config import proxy, API_ID, API_HASH, TIMEZONE, green, yellow, red, ress
+from config.config import PROXY, API_ID, API_HASH, TIMEZONE, green, yellow, red, ress
 from modules.utils import get_current_datetime
 
 timezone = _timezone(TIMEZONE)
 
 async def connect_to_telegram(session_path, api_id = API_ID, api_hash = API_HASH):
-    client = TelegramClient(session_path, api_id, api_hash, proxy=(socks.SOCKS5, proxy['host'], proxy['port'], proxy['username'], proxy['password']))
-    await client.connect()
-    if not await client.is_user_authorized():
-        print(await get_current_datetime(timezone) ,red + f"{session_path} - НЕВАЛИД" + ress)
-        return None
-    else:
-        print(await get_current_datetime(timezone), red + f"{session_path} - ВЗЯЛ СЕССИЮ В РАБОТУ" + ress)
-        return client
+    try:
+        proxy = {
+            "proxy_type": python_socks.ProxyType.SOCKS5,
+            "addr": PROXY['host'],
+            "port": PROXY['port'],
+            "username": PROXY['username'],
+            "password": PROXY['password'],
+            "rdns": True
+        }
+        client = TelegramClient(session_path, api_id, api_hash, proxy=proxy)
+        await client.connect()
+        if not await client.is_user_authorized():
+            print(await get_current_datetime(timezone) ,red + f"{session_path} - НЕВАЛИД" + ress)
+            return None
+        else:
+            print(await get_current_datetime(timezone), red + f"{session_path} - ВЗЯЛ СЕССИЮ В РАБОТУ" + ress)
+            return client
+    except Exception as e:
+        print(await get_current_datetime(timezone), red + "ПРОКСИ НЕ РАБОТАЕТ" + ress)
 
 async def connect_to_web_telegram(numbers_from_session, code_tg=None, code_queue=None):
     async with async_playwright() as p:
         proxy_socks = {
-            "server": f"http://{proxy['host']}:{proxy['port']}",
-            "username" : f"{proxy['username']}",
-            "password": f"{proxy['password']}"
+            "server": f"http://{PROXY['host']}:{PROXY['port']}",
+            "username" : f"{PROXY['username']}",
+            "password": f"{PROXY['password']}"
         }
         browser = await p.firefox.launch(
             headless=True,

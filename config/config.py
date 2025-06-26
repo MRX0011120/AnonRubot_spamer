@@ -34,7 +34,7 @@ with open(proxy_path, 'r') as file:
     host_port = proxy_parts[0]
     username_password = proxy_parts[1].split(':')
 
-    proxy = {
+    PROXY = {
         'host': host_port.split(':')[0],
         'port': int(host_port.split(':')[1]),
         'username': username_password[0],
